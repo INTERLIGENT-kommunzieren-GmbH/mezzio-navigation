@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
+## 1.0.1 - 2026-09-22
+
+### Added
+
+- Nothing.
+
+### Changed
+
+- Documentation only: the README now documents installation from Packagist
+  instead of the VCS repository workaround, and gained version and license
+  badges. No code changes.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- Nothing.
+
 ## 1.0.0 - 2026-09-22
 
 First release under the `ik-oss` namespace.
