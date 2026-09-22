@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 2.0.0 - TBD
+## 1.0.0 - 2026-09-22
 
 First release under the `ik-oss` namespace.
 
