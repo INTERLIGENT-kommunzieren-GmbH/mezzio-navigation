@@ -1,21 +1,12 @@
 {
-    "name": "mezzio/mezzio-navigation",
+    "name": "ik-oss/mezzio-navigation",
     "description": "Page, middleware and factories for navigations in a mezzio application",
-    "homepage": "https://mezzio.dev",
-    "license": "BSD-3-Clause",
+    "license": "MIT",
     "keywords": [
         "laminas",
         "mezzio",
         "mezzio-navigation"
     ],
-    "support": {
-        "docs": "https://docs.laminas.dev/laminas-navigation/",
-        "issues": "https://github.com/mezzio/mezzio-navigation/issues",
-        "source": "https://github.com/mezzio/mezzio-navigation",
-        "rss": "https://github.com/mezzio/mezzio-navigation/releases.atom",
-        "chat": "https://laminas.dev/chat",
-        "forum": "https://discourse.laminas.dev"
-    },
     "require": {
         "php": "^7.1 || ^8.0",
         "psr/http-server-middleware": "^1",
