@@ -1,7 +1,7 @@
 # mezzio-navigation
 
-[![Build Status](https://secure.travis-ci.org/froschdesign/mezzio-navigation.svg?branch=master)](https://secure.travis-ci.org/froschdesign/mezzio-navigation)
-[![Coverage Status](https://coveralls.io/repos/froschdesign/mezzio-navigation/badge.svg?branch=master)](https://coveralls.io/r/froschdesign/mezzio-navigation?branch=master)
+[![CI](https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation/badge.svg?branch=master)](https://coveralls.io/github/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation?branch=master)
 
 `mezzio-navigation` provides page, middleware and factories for 
 navigations in a mezzio application.

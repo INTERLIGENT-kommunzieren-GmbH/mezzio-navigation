@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: "PHP ${{ matrix.php }} / ${{ matrix.deps }}"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.1'
+          - '7.2'
+          - '7.3'
+          - '7.4'
+        deps:
+          - lowest
+          - locked
+          - latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ matrix.php }}-${{ matrix.deps }}-${{ hashFiles('composer.json', 'composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-${{ matrix.deps }}-
+            composer-${{ matrix.php }}-
+
+      - name: Install dependencies (locked)
+        if: matrix.deps == 'locked'
+        run: composer install --no-interaction --no-progress
+
+      - name: Install dependencies (latest)
+        if: matrix.deps == 'latest'
+        run: composer update --no-interaction --no-progress
+
+      - name: Install dependencies (lowest)
+        if: matrix.deps == 'lowest'
+        run: composer update --no-interaction --no-progress --prefer-lowest --prefer-stable
+
+      - name: Show installed packages
+        run: composer show
+
+      - name: Run tests
+        run: composer test
+
+  coding-standards:
+    name: Coding standards
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.1'
+          coverage: none
+          tools: composer:v2
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Run coding standards check
+        run: composer cs-check
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.1'
+          coverage: xdebug
+          tools: composer:v2
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Generate coverage report
+        run: composer test-coverage
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: clover.xml
+          format: clover
