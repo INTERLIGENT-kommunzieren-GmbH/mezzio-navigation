@@ -25,6 +25,8 @@ First release under the `ik-oss` namespace.
 - Replaced Travis CI with GitHub Actions and migrated the test suite from
   PHPUnit 7 (Prophecy) to PHPUnit 13.
 - Moved the `extra.zf` config-provider key to `extra.laminas`.
+- Relicensed to MIT. `LICENSE.md` retains the upstream BSD 3-Clause notice
+  for the portions of the code originating from `mezzio/mezzio-navigation`.
 - Renamed the root namespace from `Mezzio\Navigation\` to
   `Ikoss\Mezzio\Navigation\`, and the test namespace from
   `MezzioTest\Navigation\` to `IkossTest\Mezzio\Navigation\`.
