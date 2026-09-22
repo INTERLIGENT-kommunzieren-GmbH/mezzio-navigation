@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Mezzio\Navigation\Middleware;
+namespace Ikoss\Mezzio\Navigation\Middleware;
 
 use Laminas\Navigation\Navigation;
 use Psr\Container\ContainerInterface;

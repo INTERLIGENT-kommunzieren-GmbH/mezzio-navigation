@@ -6,12 +6,12 @@
 
 declare(strict_types=1);
 
-namespace MezzioTest\Navigation\Service;
+namespace IkossTest\Mezzio\Navigation\Service;
 
+use Ikoss\Mezzio\Navigation\Service\MezzioNavigationFactory;
 use Laminas\Navigation\Exception\InvalidArgumentException;
 use Laminas\Navigation\Navigation;
 use Mezzio\Helper\UrlHelper;
-use Mezzio\Navigation\Service\MezzioNavigationFactory;
 use Mezzio\Router\LaminasRouter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

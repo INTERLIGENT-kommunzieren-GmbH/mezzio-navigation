@@ -6,12 +6,12 @@
 
 declare(strict_types=1);
 
-namespace MezzioTest\Navigation\Middleware;
+namespace IkossTest\Mezzio\Navigation\Middleware;
 
+use Ikoss\Mezzio\Navigation\Middleware\NavigationMiddleware;
+use Ikoss\Mezzio\Navigation\Middleware\NavigationMiddlewareFactory;
+use Ikoss\Mezzio\Navigation\Page\MezzioPage;
 use Laminas\Navigation\Navigation;
-use Mezzio\Navigation\Middleware\NavigationMiddleware;
-use Mezzio\Navigation\Middleware\NavigationMiddlewareFactory;
-use Mezzio\Navigation\Page\MezzioPage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

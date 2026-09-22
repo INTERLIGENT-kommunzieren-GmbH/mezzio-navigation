@@ -37,7 +37,7 @@ composer require ik-oss/mezzio-navigation
 
 The package ships a `ConfigProvider`, which is registered automatically by
 `laminas-component-installer`. Without it, add
-`Mezzio\Navigation\ConfigProvider` to your application config manually.
+`Ikoss\Mezzio\Navigation\ConfigProvider` to your application config manually.
 
 ## Development
 

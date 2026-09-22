@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Mezzio\Navigation\Service;
+namespace Ikoss\Mezzio\Navigation\Service;
 
 use Laminas\Navigation\Exception;
 use Laminas\Navigation\Navigation;

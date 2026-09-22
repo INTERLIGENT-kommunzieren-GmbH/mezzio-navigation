@@ -6,13 +6,13 @@
 
 declare(strict_types=1);
 
-namespace Mezzio\Navigation\Service;
+namespace Ikoss\Mezzio\Navigation\Service;
 
+use Ikoss\Mezzio\Navigation\Page\MezzioPage;
 use Laminas\Config;
 use Laminas\Navigation\Exception;
 use Laminas\Stdlib\ArrayUtils;
 use Mezzio\Helper\UrlHelper;
-use Mezzio\Navigation\Page\MezzioPage;
 use Psr\Container\ContainerInterface;
 use Traversable;
 

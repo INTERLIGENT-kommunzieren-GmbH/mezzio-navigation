@@ -6,14 +6,14 @@
 
 declare(strict_types=1);
 
-namespace MezzioTest\Navigation\Page;
+namespace IkossTest\Mezzio\Navigation\Page;
 
+use Ikoss\Mezzio\Navigation\Page\MezzioPage;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Navigation\Exception\DomainException;
 use Laminas\Navigation\Exception\InvalidArgumentException;
 use Mezzio\Helper\Exception\RuntimeException as UrlHelperRuntimeException;
 use Mezzio\Helper\UrlHelper;
-use Mezzio\Navigation\Page\MezzioPage;
 use Mezzio\Router\LaminasRouter;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;

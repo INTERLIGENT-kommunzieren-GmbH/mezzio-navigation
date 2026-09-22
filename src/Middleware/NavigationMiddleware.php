@@ -6,11 +6,11 @@
 
 declare(strict_types=1);
 
-namespace Mezzio\Navigation\Middleware;
+namespace Ikoss\Mezzio\Navigation\Middleware;
 
+use Ikoss\Mezzio\Navigation\Page\MezzioPage;
 use Laminas\Navigation\AbstractContainer;
 use Laminas\Navigation\Exception;
-use Mezzio\Navigation\Page\MezzioPage;
 use Mezzio\Router\RouteResult;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

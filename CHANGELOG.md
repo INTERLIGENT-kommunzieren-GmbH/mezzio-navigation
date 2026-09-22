@@ -25,6 +25,9 @@ First release under the `ik-oss` namespace.
 - Replaced Travis CI with GitHub Actions and migrated the test suite from
   PHPUnit 7 (Prophecy) to PHPUnit 13.
 - Moved the `extra.zf` config-provider key to `extra.laminas`.
+- Renamed the root namespace from `Mezzio\Navigation\` to
+  `Ikoss\Mezzio\Navigation\`, and the test namespace from
+  `MezzioTest\Navigation\` to `IkossTest\Mezzio\Navigation\`.
 
 ### Deprecated
 
@@ -32,7 +35,9 @@ First release under the `ik-oss` namespace.
 
 ### Removed
 
-- Nothing.
+- The `replace` entry for `zendframework/zend-expressive-navigation`. The
+  package no longer provides the `Mezzio\Navigation\` namespace, so it can
+  no longer stand in for its predecessor.
 
 ### Fixed
 

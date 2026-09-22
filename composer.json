@@ -31,12 +31,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Mezzio\\Navigation\\": "src/"
+            "Ikoss\\Mezzio\\Navigation\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "MezzioTest\\Navigation\\": "test/"
+            "IkossTest\\Mezzio\\Navigation\\": "test/"
         }
     },
     "config": {
@@ -47,7 +47,7 @@
     },
     "extra": {
         "laminas": {
-            "config-provider": "Mezzio\\Navigation\\ConfigProvider"
+            "config-provider": "Ikoss\\Mezzio\\Navigation\\ConfigProvider"
         }
     },
     "scripts": {
@@ -59,8 +59,5 @@
         "cs-fix": "phpcbf",
         "test": "phpunit --colors=always",
         "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
-    },
-    "replace": {
-        "zendframework/zend-expressive-navigation": "dev-master"
     }
 }

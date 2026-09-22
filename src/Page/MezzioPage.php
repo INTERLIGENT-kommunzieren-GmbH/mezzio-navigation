@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Mezzio\Navigation\Page;
+namespace Ikoss\Mezzio\Navigation\Page;
 
 use Laminas\Navigation\Exception;
 use Laminas\Navigation\Page\AbstractPage;
@@ -77,7 +77,7 @@ class MezzioPage extends AbstractPage
 
         if ($this->urlHelper === null) {
             throw new Exception\DomainException(
-                'Mezzio\Navigation\Page\MezzioPage::getHref cannot execute'
+                'Ikoss\Mezzio\Navigation\Page\MezzioPage::getHref cannot execute'
                 . ' without a Mezzio\Helper\UrlHelper being set'
             );
         }
