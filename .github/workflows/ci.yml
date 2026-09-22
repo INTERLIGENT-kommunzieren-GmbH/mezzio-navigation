@@ -60,7 +60,8 @@ jobs:
       # that re-resolve dependencies. Drop this once the toolchain is modernised.
       - name: Allow advisory-flagged dev dependencies
         if: matrix.deps != 'locked'
-        run: composer config --no-plugins policy.advisories.block false
+        # Composer 2.2 LTS (used on PHP 7.1) has no advisory policy to lift.
+        run: composer config --no-plugins policy.advisories.block false || true
 
       - name: Install dependencies (latest)
         if: matrix.deps == 'latest'
