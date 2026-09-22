@@ -1,111 +1,95 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace MezzioTest\Navigation\Service;
 
-use Interop\Container\ContainerInterface;
-use PHPUnit\Framework\TestCase;
+use Laminas\Navigation\Exception\InvalidArgumentException;
+use Laminas\Navigation\Navigation;
 use Mezzio\Helper\UrlHelper;
 use Mezzio\Navigation\Service\MezzioNavigationFactory;
 use Mezzio\Router\LaminasRouter;
-use Laminas\Navigation\Exception\InvalidArgumentException;
-use Laminas\Navigation\Navigation;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use ReflectionClass;
 
-class MezzioNavigationFactoryTest extends TestCase
+#[CoversClass(MezzioNavigationFactory::class)]
+final class MezzioNavigationFactoryTest extends TestCase
 {
-    /**
-     * @var MezzioNavigationFactory
-     */
-    private $factory;
+    private MezzioNavigationFactory $factory;
 
-    /**
-     * @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy
-     */
-    private $container;
+    private ContainerInterface $container;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        // Create factory
-        $this->factory = new MezzioNavigationFactory();
-
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->get('config')->willReturn([
+        $this->factory   = new MezzioNavigationFactory();
+        $this->container = $this->createContainer([
             'navigation' => [
                 'default' => [
-                    [
-                        'route' => 'home',
-                    ],
+                    ['route' => 'home'],
                 ],
             ],
         ]);
-        $prophecy->get(UrlHelper::class)->willReturn(
-            new UrlHelper(new LaminasRouter())
-        );
-        $this->container = $prophecy->reveal();
     }
 
-    public function testInvokeMethodShouldReturnNavigationInstance()
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function createContainer(array $config): ContainerInterface
     {
-        $factory = $this->factory;
-        $this->assertInstanceOf(
+        $container = $this->createStub(ContainerInterface::class);
+        $container->method('has')
+            ->willReturnCallback(static fn (string $id): bool => $id === 'config');
+        $container->method('get')
+            ->willReturnCallback(static fn (string $id): mixed => match ($id) {
+                'config'          => $config,
+                UrlHelper::class  => new UrlHelper(new LaminasRouter()),
+                default           => null,
+            });
+
+        return $container;
+    }
+
+    public function testInvokeMethodShouldReturnNavigationInstance(): void
+    {
+        self::assertInstanceOf(
             Navigation::class,
-            $factory($this->container)
+            ($this->factory)($this->container)
         );
     }
 
-    public function testGetPagesSetsPagesProperty()
+    public function testGetPagesSetsPagesProperty(): void
     {
-        $reflection = new \ReflectionClass($this->factory);
-        $property   = $reflection->getProperty('pages');
-        $property->setAccessible(true);
+        $property = (new ReflectionClass($this->factory))->getProperty('pages');
 
-        $factory = $this->factory;
-        $this->assertNull($property->getValue($this->factory));
-        $factory($this->container);
+        self::assertNull($property->getValue($this->factory));
 
-        $this->assertTrue(is_array($property->getValue($this->factory)));
-        $factory($this->container);
+        ($this->factory)($this->container);
+
+        self::assertIsArray($property->getValue($this->factory));
+
+        // Second invocation must reuse the cached pages
+        ($this->factory)($this->container);
+
+        self::assertIsArray($property->getValue($this->factory));
     }
 
-    public function testMissingNavigationConfigShouldThrowException()
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->get('config')->willReturn([]);
-        $prophecy->get(UrlHelper::class)->willReturn(
-            new UrlHelper(new LaminasRouter())
-        );
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
-
-        $factory = $this->factory;
-        $factory($container);
-    }
-
-    public function testMissingDefaultConfigShouldThrowException()
+    public function testMissingNavigationConfigShouldThrowException(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->get('config')->willReturn(['navigation' => []]);
-        $prophecy->get(UrlHelper::class)->willReturn(
-            new UrlHelper(new LaminasRouter())
-        );
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
+        ($this->factory)($this->createContainer([]));
+    }
 
-        $factory = $this->factory;
-        $factory($container);
+    public function testMissingDefaultConfigShouldThrowException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        ($this->factory)($this->createContainer(['navigation' => []]));
     }
 }

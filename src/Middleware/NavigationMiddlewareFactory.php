@@ -1,46 +1,37 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace Mezzio\Navigation\Middleware;
 
-use Interop\Container\ContainerInterface;
 use Laminas\Navigation\Navigation;
+use Psr\Container\ContainerInterface;
+
+use function array_keys;
+use function count;
+use function current;
+use function is_array;
+use function ucfirst;
 
 class NavigationMiddlewareFactory
 {
-    /**
-     * Top-level configuration key indicating navigation configuration
-     *
-     * @var string
-     */
-    public const CONFIG_KEY = 'navigation';
+    /** Top-level configuration key indicating navigation configuration */
+    public const string CONFIG_KEY = 'navigation';
 
-    /**
-     * Service manager factory prefix
-     *
-     * @var string
-     */
-    public const SERVICE_PREFIX = 'Laminas\\Navigation\\';
+    /** Service manager factory prefix */
+    public const string SERVICE_PREFIX = 'Laminas\\Navigation\\';
 
-    /**
-     * @var array|null
-     */
-    private $containerNames;
+    /** @var list<string>|null */
+    private ?array $containerNames = null;
 
-    /**
-     * @param ContainerInterface $container
-     * @return NavigationMiddleware
-     */
-    public function __invoke(ContainerInterface $container)
+    public function __invoke(ContainerInterface $container): NavigationMiddleware
     {
-        $containerNames = $this->getContainerNames($container);
-
         $containers = [];
-        foreach ($containerNames as $containerName) {
+        foreach ($this->getContainerNames($container) as $containerName) {
             $containers[] = $container->get($containerName);
         }
 
@@ -50,39 +41,37 @@ class NavigationMiddlewareFactory
     /**
      * Get navigation container names
      *
-     * @param  ContainerInterface $container
-     * @return array
+     * @return list<string>
      */
-    private function getContainerNames(ContainerInterface $container) : array
+    private function getContainerNames(ContainerInterface $container): array
     {
         if ($this->containerNames !== null) {
             return $this->containerNames;
         }
 
         if (! $container->has('config')) {
-            $this->containerNames = [];
-            return $this->containerNames;
+            return $this->containerNames = [];
         }
 
         $config = $container->get('config');
-        if (! isset($config[self::CONFIG_KEY])
-            || ! \is_array($config[self::CONFIG_KEY])
+        if (
+            ! isset($config[self::CONFIG_KEY])
+            || ! is_array($config[self::CONFIG_KEY])
         ) {
-            $this->containerNames = [];
-            return $this->containerNames;
+            return $this->containerNames = [];
         }
 
         $names = array_keys($config[self::CONFIG_KEY]);
 
-        if (\count($names) === 1 && current($names) === 'default') {
-            $this->containerNames[] = Navigation::class;
-            return $this->containerNames;
+        if (count($names) === 1 && current($names) === 'default') {
+            return $this->containerNames = [Navigation::class];
         }
 
+        $containerNames = [];
         foreach ($names as $name) {
-            $this->containerNames[] = self::SERVICE_PREFIX . ucfirst($name);
+            $containerNames[] = self::SERVICE_PREFIX . ucfirst((string) $name);
         }
 
-        return $this->containerNames;
+        return $this->containerNames = $containerNames;
     }
 }

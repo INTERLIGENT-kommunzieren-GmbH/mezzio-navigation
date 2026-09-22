@@ -1,43 +1,40 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace Mezzio\Navigation\Service;
 
-use Psr\Container\ContainerInterface;
 use Laminas\Navigation\Exception;
 use Laminas\Navigation\Navigation;
+use Psr\Container\ContainerInterface;
 
 class MezzioNavigationFactory extends AbstractMezzioNavigationFactory
 {
-    /**
-     * @var array|null
-     */
-    private $pages;
+    /** @var array<array-key, mixed>|null */
+    private ?array $pages = null;
 
     /**
      * Create and return a new Navigation instance
      *
-     * @param ContainerInterface $container
-     * @return Navigation
+     * @throws Exception\InvalidArgumentException
      */
-    public function __invoke(ContainerInterface $container)
+    public function __invoke(ContainerInterface $container): Navigation
     {
         return new Navigation($this->getPages($container));
     }
 
     /**
-     * @param ContainerInterface $container
-     * @return array
+     * @return array<array-key, mixed>
      * @throws Exception\InvalidArgumentException
      */
-    private function getPages(ContainerInterface $container) : array
+    private function getPages(ContainerInterface $container): array
     {
         // Is already created?
-        if (null !== $this->pages) {
+        if ($this->pages !== null) {
             return $this->pages;
         }
 
@@ -48,6 +45,7 @@ class MezzioNavigationFactory extends AbstractMezzioNavigationFactory
                 'Could not find navigation configuration key'
             );
         }
+
         if (! isset($configuration['navigation']['default'])) {
             throw new Exception\InvalidArgumentException(
                 'Failed to find a navigation container by the name "default"'
@@ -58,8 +56,6 @@ class MezzioNavigationFactory extends AbstractMezzioNavigationFactory
             $configuration['navigation']['default']
         );
 
-        $this->pages = $this->preparePages($container, $pages);
-
-        return $this->pages;
+        return $this->pages = $this->preparePages($container, $pages);
     }
 }

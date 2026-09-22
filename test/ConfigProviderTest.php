@@ -1,21 +1,26 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace MezzioTest\Navigation;
 
-use PHPUnit\Framework\TestCase;
-use Mezzio\Navigation\Middleware;
-use Mezzio\Navigation\ConfigProvider;
-use Mezzio\Navigation\Service;
 use Laminas\Navigation\Navigation;
+use Mezzio\Navigation\ConfigProvider;
+use Mezzio\Navigation\Middleware;
+use Mezzio\Navigation\Service;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\TestCase;
 
-class ConfigProviderTest extends TestCase
+#[CoversClass(ConfigProvider::class)]
+final class ConfigProviderTest extends TestCase
 {
-    private $config = [
+    /** @var array<string, mixed> */
+    private array $config = [
         'abstract_factories' => [
             Service\MezzioNavigationAbstractServiceFactory::class,
         ],
@@ -28,25 +33,20 @@ class ConfigProviderTest extends TestCase
         ],
     ];
 
-    public function testProvidesExpectedConfiguration()
+    public function testProvidesExpectedConfiguration(): ConfigProvider
     {
         $provider = new ConfigProvider();
-        $this->assertEquals($this->config, $provider->getDependencyConfig());
+        self::assertSame($this->config, $provider->getDependencyConfig());
 
         return $provider;
     }
 
-    /**
-     * @depends testProvidesExpectedConfiguration
-     * @param ConfigProvider $provider
-     */
+    #[Depends('testProvidesExpectedConfiguration')]
     public function testInvocationProvidesDependencyConfiguration(
         ConfigProvider $provider
-    ) {
-        $this->assertEquals(
-            [
-                'dependencies' => $provider->getDependencyConfig(),
-            ],
+    ): void {
+        self::assertSame(
+            ['dependencies' => $provider->getDependencyConfig()],
             $provider()
         );
     }

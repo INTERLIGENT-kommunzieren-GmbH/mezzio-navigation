@@ -1,159 +1,116 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace MezzioTest\Navigation\Middleware;
 
-use PHPUnit\Framework\TestCase;
-use Interop\Container\ContainerInterface;
-use ReflectionObject;
+use Laminas\Navigation\Navigation;
 use Mezzio\Navigation\Middleware\NavigationMiddleware;
 use Mezzio\Navigation\Middleware\NavigationMiddlewareFactory;
 use Mezzio\Navigation\Page\MezzioPage;
-use Laminas\Navigation\Navigation;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use ReflectionObject;
 
-class NavigationMiddlewareFactoryTest extends TestCase
+use function array_shift;
+
+#[CoversClass(NavigationMiddlewareFactory::class)]
+final class NavigationMiddlewareFactoryTest extends TestCase
 {
-    /**
-     * @var NavigationMiddlewareFactory
-     */
-    private $factory;
+    private NavigationMiddlewareFactory $factory;
 
-    /**
-     * @var Navigation
-     */
-    private $navigation;
+    private Navigation $navigation;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        // Create factory
-        $this->factory = new NavigationMiddlewareFactory();
-
-        // Create navigation
+        $this->factory    = new NavigationMiddlewareFactory();
         $this->navigation = new Navigation();
     }
 
-    public function testFactoryWithMultipleNavigations()
+    /**
+     * @param array<string, mixed> $services
+     */
+    private function createContainer(bool $hasConfig, array $services = []): ContainerInterface
     {
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(true);
-        $prophecy->get('config')->willReturn([
-            'navigation' => [
-                'default' => [],
-                'special' => [],
-            ],
-        ]);
-        $prophecy->get('Laminas\Navigation\Default')->willReturn(
-            $this->navigation
-        );
-        $prophecy->get('Laminas\Navigation\Special')->willReturn(
-            $this->navigation
-        );
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
+        $container = $this->createStub(ContainerInterface::class);
+        $container->method('has')
+            ->willReturnCallback(static fn (string $id): bool => $id === 'config' && $hasConfig);
+        $container->method('get')
+            ->willReturnCallback(static fn (string $id): mixed => $services[$id] ?? null);
 
-        $factory = $this->factory;
-        $this->assertInstanceOf(
+        return $container;
+    }
+
+    public function testFactoryWithMultipleNavigations(): void
+    {
+        $container = $this->createContainer(true, [
+            'config'                     => [
+                'navigation' => [
+                    'default' => [],
+                    'special' => [],
+                ],
+            ],
+            'Laminas\Navigation\Default' => $this->navigation,
+            'Laminas\Navigation\Special' => $this->navigation,
+        ]);
+
+        self::assertInstanceOf(
             NavigationMiddleware::class,
-            $factory($container)
+            ($this->factory)($container)
         );
     }
 
-    public function testFactoryWithOneNavigation()
+    public function testFactoryWithOneNavigation(): void
     {
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(true);
-        $prophecy->get('config')->willReturn([
-            'navigation' => [
-                'default' => [],
-            ],
+        $container = $this->createContainer(true, [
+            'config'          => ['navigation' => ['default' => []]],
+            Navigation::class => $this->navigation,
         ]);
-        $prophecy->get(Navigation::class)->willReturn(
-            $this->navigation
-        );
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
 
-        $factory = $this->factory;
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             NavigationMiddleware::class,
-            $factory($container)
+            ($this->factory)($container)
         );
     }
 
-    public function testFactoryWithOneNavigationAndCustomNavigationName()
+    public function testFactoryWithOneNavigationAndCustomNavigationName(): void
     {
-        // Add page
-        $this->navigation->addPage(
-            new MezzioPage(['route' => 'home'])
-        );
+        $this->navigation->addPage(new MezzioPage(['route' => 'home']));
 
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(true);
-        $prophecy->get('config')->willReturn([
-            'navigation' => [
-                'special' => [],
-            ],
+        $container = $this->createContainer(true, [
+            'config'                     => ['navigation' => ['special' => []]],
+            'Laminas\Navigation\Special' => $this->navigation,
         ]);
-        $prophecy->get('Laminas\Navigation\Special')->willReturn(
-            $this->navigation
-        );
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
 
-        // Test middleware
-        $factory = $this->factory;
-        $middleware = $factory($container);
-        $this->assertInstanceOf(NavigationMiddleware::class, $middleware);
+        $middleware = ($this->factory)($container);
+        self::assertInstanceOf(NavigationMiddleware::class, $middleware);
 
-        $reflection = new ReflectionObject($middleware);
-        $property = $reflection->getProperty('containers');
-        $property->setAccessible(true);
-        /** @var array $containers */
+        $property   = (new ReflectionObject($middleware))->getProperty('containers');
         $containers = $property->getValue($middleware);
 
-        $this->assertSame($this->navigation, array_shift($containers));
+        self::assertSame($this->navigation, array_shift($containers));
     }
 
-    public function testFactoryWithoutConfigShouldReturnMiddleware()
+    public function testFactoryWithoutConfigShouldReturnMiddleware(): void
     {
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(false);
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
-
-        $factory = $this->factory;
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             NavigationMiddleware::class,
-            $factory($container)
+            ($this->factory)($this->createContainer(false))
         );
     }
 
-    public function testFactoryWithoutNavigationConfigShouldReturnMiddleware()
+    public function testFactoryWithoutNavigationConfigShouldReturnMiddleware(): void
     {
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(true);
-        $prophecy->get('config')->willReturn([]);
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
+        $container = $this->createContainer(true, ['config' => []]);
 
-        $factory = $this->factory;
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             NavigationMiddleware::class,
-            $factory($container)
+            ($this->factory)($container)
         );
     }
 }

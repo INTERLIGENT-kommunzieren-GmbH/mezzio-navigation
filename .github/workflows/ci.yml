@@ -9,6 +9,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  PHP_VERSION: '8.5'
+
 jobs:
   tests:
     name: "PHP ${{ matrix.php }} / ${{ matrix.deps }}"
@@ -18,10 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         php:
-          - '7.1'
-          - '7.2'
-          - '7.3'
-          - '7.4'
+          - '8.5'
         deps:
           - lowest
           - locked
@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -49,19 +49,12 @@ jobs:
             composer-${{ matrix.php }}-${{ matrix.deps }}-
             composer-${{ matrix.php }}-
 
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict --no-check-publish
+
       - name: Install dependencies (locked)
         if: matrix.deps == 'locked'
         run: composer install --no-interaction --no-progress
-
-      # The dev toolchain pinned by composer.json (phpunit 7.x, php_codesniffer
-      # 2.x) is old enough that every usable version carries a Packagist
-      # security advisory, which Composer >= 2.9 refuses to resolve by default.
-      # These are dev-only, CI-only tools, so the block is lifted for the jobs
-      # that re-resolve dependencies. Drop this once the toolchain is modernised.
-      - name: Allow advisory-flagged dev dependencies
-        if: matrix.deps != 'locked'
-        # Composer 2.2 LTS (used on PHP 7.1) has no advisory policy to lift.
-        run: composer config --no-plugins policy.advisories.block false || true
 
       - name: Install dependencies (latest)
         if: matrix.deps == 'latest'
@@ -83,12 +76,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.1'
+          php-version: ${{ env.PHP_VERSION }}
           coverage: none
           tools: composer:v2
         env:
@@ -106,12 +99,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.1'
+          php-version: ${{ env.PHP_VERSION }}
           coverage: xdebug
           tools: composer:v2
         env:

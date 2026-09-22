@@ -1,34 +1,36 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace Mezzio\Navigation\Middleware;
 
+use Laminas\Navigation\AbstractContainer;
+use Laminas\Navigation\Exception;
+use Mezzio\Navigation\Page\MezzioPage;
+use Mezzio\Router\RouteResult;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use RecursiveIteratorIterator;
-use Mezzio\Navigation\Page\MezzioPage;
-use Mezzio\Router\RouteResult;
-use Laminas\Navigation\AbstractContainer;
-use Laminas\Navigation\Exception;
+
+use function sprintf;
 
 /**
  * Pipeline middleware for injecting Navigations with a RouteResult.
  */
 class NavigationMiddleware implements MiddlewareInterface
 {
-    /**
-     * @var AbstractContainer[]
-     */
-    private $containers = [];
+    /** @var list<AbstractContainer> */
+    private array $containers = [];
 
     /**
-     * @param AbstractContainer[] $containers
+     * @param array<mixed> $containers
+     * @throws Exception\InvalidArgumentException
      */
     public function __construct(array $containers)
     {
@@ -50,7 +52,7 @@ class NavigationMiddleware implements MiddlewareInterface
     public function process(
         ServerRequestInterface $request,
         RequestHandlerInterface $handler
-    ) : ResponseInterface {
+    ): ResponseInterface {
         $routeResult = $request->getAttribute(RouteResult::class, false);
 
         if (! $routeResult instanceof RouteResult) {
@@ -64,9 +66,11 @@ class NavigationMiddleware implements MiddlewareInterface
             );
 
             foreach ($iterator as $page) {
-                if ($page instanceof MezzioPage) {
-                    $page->setRouteResult($routeResult);
+                if (! $page instanceof MezzioPage) {
+                    continue;
                 }
+
+                $page->setRouteResult($routeResult);
             }
         }
 

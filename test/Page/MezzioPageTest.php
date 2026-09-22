@@ -1,331 +1,284 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace MezzioTest\Navigation\Page;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Http\Server\MiddlewareInterface;
 use Laminas\Diactoros\ServerRequest;
+use Laminas\Navigation\Exception\DomainException;
+use Laminas\Navigation\Exception\InvalidArgumentException;
 use Mezzio\Helper\Exception\RuntimeException as UrlHelperRuntimeException;
 use Mezzio\Helper\UrlHelper;
 use Mezzio\Navigation\Page\MezzioPage;
+use Mezzio\Router\LaminasRouter;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
-use Mezzio\Router\LaminasRouter;
-use Laminas\Navigation\Exception\InvalidArgumentException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Server\MiddlewareInterface;
+use ReflectionClass;
 
-class MezzioPageTest extends TestCase
+#[CoversClass(MezzioPage::class)]
+final class MezzioPageTest extends TestCase
 {
-    /**
-     * @var \Mezzio\Router\Route
-     */
-    private $route;
+    private Route $route;
 
-    /**
-     * @var \Mezzio\Router\RouteResult
-     */
-    private $routeResult;
+    private RouteResult $routeResult;
 
-    /**
-     * @var UrlHelper
-     */
-    private $urlHelper;
+    private UrlHelper $urlHelper;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        // Create middleware double
-        $middleware = $this->prophesize(MiddlewareInterface::class)->reveal();
+        $middleware = $this->createStub(MiddlewareInterface::class);
 
-        // Create URL helper
         $this->route = new Route('/foo', $middleware, ['GET'], 'foo');
-        $router      = new LaminasRouter();
+
+        $router = new LaminasRouter();
         $router->addRoute($this->route);
+
+        $request = new ServerRequest(
+            ['REQUEST_METHOD' => 'GET'],
+            [],
+            '/foo',
+            'GET'
+        );
+
+        $this->routeResult = $router->match($request);
+
         $this->urlHelper = new UrlHelper($router);
-
-        // Set route result
-        $this->routeResult = $router->match(
-            $request = new ServerRequest(
-                ['REQUEST_METHOD' => 'GET'],
-                [],
-                '/foo',
-                'GET'
-            )
-        );
+        // UrlHelperMiddleware does this in a real pipeline; setRouteResult()
+        // requires a request to have been injected first.
+        $this->urlHelper->setRequest($request);
     }
 
-    public function testGetHref()
+    public function testGetHref(): void
     {
-        $page = new MezzioPage(
-            [
-                'route'        => 'foo',
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage([
+            'route'        => 'foo',
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+        ]);
 
-        $this->assertSame('/foo', $page->getHref());
+        self::assertSame('/foo', $page->getHref());
     }
 
-    public function testGetHrefWithoutRouteName()
+    public function testGetHrefWithoutRouteName(): void
     {
-        $page = new MezzioPage(
-            [
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage([
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+        ]);
 
-        $this->assertSame('/foo', $page->getHref());
+        self::assertSame('/foo', $page->getHref());
     }
 
-    public function testGetHrefWithFragment()
+    public function testGetHrefWithFragment(): void
     {
-        $page = new MezzioPage(
-            [
-                'route'        => 'foo',
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-                'fragment'     => 'bar',
-            ]
-        );
+        $page = new MezzioPage([
+            'route'        => 'foo',
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+            'fragment'     => 'bar',
+        ]);
 
-        $this->assertSame('/foo#bar', $page->getHref());
+        self::assertSame('/foo#bar', $page->getHref());
     }
 
-    public function testGetHrefWithQueryParams()
+    public function testGetHrefWithQueryParams(): void
     {
-        $page = new MezzioPage(
-            [
-                'route'        => 'foo',
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-                'query'        => [
-                    'bar' => 1,
-                    'baz' => 2,
-                ],
-            ]
-        );
+        $page = new MezzioPage([
+            'route'        => 'foo',
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+            'query'        => [
+                'bar' => 1,
+                'baz' => 2,
+            ],
+        ]);
 
-        $this->assertSame('/foo?bar=1&baz=2', $page->getHref());
+        self::assertSame('/foo?bar=1&baz=2', $page->getHref());
     }
 
-    public function testGetHrefWithBasePath()
+    public function testGetHrefWithBasePath(): void
     {
-        // Create page
-        $page = new MezzioPage(
-            [
-                'route'        => 'foo',
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage([
+            'route'        => 'foo',
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+        ]);
 
-        // Set base path
         $this->urlHelper->setBasePath('bar');
 
-        $this->assertSame('/bar/foo', $page->getHref());
+        self::assertSame('/bar/foo', $page->getHref());
     }
 
-    public function testGetHrefWithFailedResultSet()
+    public function testGetHrefWithFailedResultSet(): void
     {
-        $this->expectException(UrlHelperRuntimeException::class);
+        $page = new MezzioPage([
+            'url_helper'   => $this->urlHelper,
+            'route_result' => RouteResult::fromRouteFailure(null),
+        ]);
 
-        $failedResultSet = RouteResult::fromRouteFailure(null);
-        $page            = new MezzioPage(
-            [
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $failedResultSet,
-            ]
-        );
+        $this->expectException(UrlHelperRuntimeException::class);
 
         $page->getHref();
     }
 
-    public function testGetHrefWithRouteResultOnUrlHelperAndNotPageShouldGenerateHref()
+    public function testGetHrefWithoutUrlHelperShouldThrowException(): void
+    {
+        $page = new MezzioPage(['route' => 'foo']);
+
+        $this->expectException(DomainException::class);
+
+        $page->getHref();
+    }
+
+    public function testGetHrefWithRouteResultOnUrlHelperAndNotPageShouldGenerateHref(): void
     {
         $this->urlHelper->setRouteResult($this->routeResult);
 
-        $page = new MezzioPage(
-            [
-                'url_helper' => $this->urlHelper,
-            ]
-        );
+        $page = new MezzioPage(['url_helper' => $this->urlHelper]);
 
-        $this->assertSame('/foo', $page->getHref());
+        self::assertSame('/foo', $page->getHref());
     }
 
-    public function testGetHrefSetsHrefCache()
+    public function testGetHrefSetsHrefCache(): void
     {
-        $page = new MezzioPage(
-            [
-                'route'        => 'foo',
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage([
+            'route'        => 'foo',
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+        ]);
 
-        $reflection = new \ReflectionClass($page);
-        $property   = $reflection->getProperty('hrefCache');
-        $property->setAccessible(true);
+        $property = (new ReflectionClass($page))->getProperty('hrefCache');
 
-        $this->assertNull($property->getValue($page));
-        $page->getHref();
+        self::assertNull($property->getValue($page));
 
-        $this->assertSame('/foo', $property->getValue($page));
-        $page->getHref();
+        self::assertSame('/foo', $page->getHref());
+        self::assertSame('/foo', $property->getValue($page));
+
+        // Second call must come from the cache
+        self::assertSame('/foo', $page->getHref());
     }
 
-    public function testIsActive()
+    public function testIsActive(): void
     {
-        $page = new MezzioPage(
-            [
-                'route'        => 'foo',
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage([
+            'route'        => 'foo',
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+        ]);
 
-        $this->assertTrue($page->isActive());
+        self::assertTrue($page->isActive());
     }
 
-    public function testIsActiveWithoutRoute()
+    public function testIsActiveWithoutRoute(): void
     {
-        $page = new MezzioPage(
-            [
-                'url_helper'   => $this->urlHelper,
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage([
+            'url_helper'   => $this->urlHelper,
+            'route_result' => $this->routeResult,
+        ]);
 
-        $this->assertFalse($page->isActive());
+        self::assertFalse($page->isActive());
     }
 
-    public function testSetRoutePerConstructor()
+    public function testSetRoutePerConstructor(): void
     {
-        $name = 'foo';
-        $page = new MezzioPage(
-            [
-                'route' => $name,
-            ]
-        );
+        $page = new MezzioPage(['route' => 'foo']);
 
-        $this->assertSame($name, $page->getRoute());
+        self::assertSame('foo', $page->getRoute());
     }
 
-    public function testSetRoutePerMethod()
+    public function testSetRoutePerMethod(): void
     {
-        $name = 'foo';
         $page = new MezzioPage();
-        $page->setRoute($name);
+        $page->setRoute('foo');
 
-        $this->assertSame($name, $page->getRoute());
+        self::assertSame('foo', $page->getRoute());
     }
 
-    public function testSetRouteToNull()
+    public function testSetRouteToNull(): void
     {
         $page = new MezzioPage();
         $page->setRoute(null);
 
-        $this->assertNull($page->getRoute());
+        self::assertNull($page->getRoute());
     }
 
-    public function testInvalidArgumentForRouteShouldThrowException()
+    public function testInvalidArgumentForRouteShouldThrowException(): void
     {
+        $page = new MezzioPage();
+
         $this->expectException(InvalidArgumentException::class);
 
-        $page = new MezzioPage();
         $page->setRoute('');
     }
 
-    public function testSetRouterPerConstructor()
+    public function testSetRouterPerConstructor(): void
     {
-        $page = new MezzioPage(
-            [
-                'url_helper' => $this->urlHelper,
-            ]
-        );
+        $page = new MezzioPage(['url_helper' => $this->urlHelper]);
 
-        $this->assertSame($this->urlHelper, $page->getUrlHelper());
+        self::assertSame($this->urlHelper, $page->getUrlHelper());
     }
 
-    public function testSetUrlPerMethod()
+    public function testSetUrlPerMethod(): void
     {
         $page = new MezzioPage();
         $page->setUrlHelper($this->urlHelper);
 
-        $this->assertSame($this->urlHelper, $page->getUrlHelper());
+        self::assertSame($this->urlHelper, $page->getUrlHelper());
     }
 
-    public function testSetRouteResultPerConstructor()
+    public function testSetRouteResultPerConstructor(): void
     {
-        $page = new MezzioPage(
-            [
-                'route_result' => $this->routeResult,
-            ]
-        );
+        $page = new MezzioPage(['route_result' => $this->routeResult]);
 
-        $this->assertSame($this->routeResult, $page->getRouteResult());
+        self::assertSame($this->routeResult, $page->getRouteResult());
     }
 
-    public function testSetRouteResultPerMethod()
+    public function testSetRouteResultPerMethod(): void
     {
         $page = new MezzioPage();
         $page->setRouteResult($this->routeResult);
 
-        $this->assertSame($this->routeResult, $page->getRouteResult());
+        self::assertSame($this->routeResult, $page->getRouteResult());
     }
 
-    public function testSetParamsPerConstructor()
+    public function testSetParamsPerConstructor(): void
     {
-        $params = [
-            'foo' => 'bar',
-        ];
-        $page   = new MezzioPage(
-            [
-                'params' => $params,
-            ]
-        );
+        $params = ['foo' => 'bar'];
+        $page   = new MezzioPage(['params' => $params]);
 
-        $this->assertSame($params, $page->getParams());
+        self::assertSame($params, $page->getParams());
     }
 
-    public function testSetParamsPerMethod()
+    public function testSetParamsPerMethod(): void
     {
-        $params = [
-            'foo' => 'bar',
-        ];
+        $params = ['foo' => 'bar'];
         $page   = new MezzioPage();
         $page->setParams($params);
 
-        $this->assertSame($params, $page->getParams());
+        self::assertSame($params, $page->getParams());
     }
 
-    public function testSetQueryPerConstructor()
+    public function testSetQueryPerConstructor(): void
     {
-        $query = [
-            'foo' => 'bar',
-        ];
-        $page  = new MezzioPage(
-            [
-                'query' => $query,
-            ]
-        );
+        $query = ['foo' => 'bar'];
+        $page  = new MezzioPage(['query' => $query]);
 
-        $this->assertSame($query, $page->getQuery());
+        self::assertSame($query, $page->getQuery());
     }
 
-    public function testSetQueryPerMethod()
+    public function testSetQueryPerMethod(): void
     {
-        $query = [
-            'foo' => 'bar',
-        ];
+        $query = ['foo' => 'bar'];
         $page  = new MezzioPage();
         $page->setQuery($query);
 
-        $this->assertSame($query, $page->getQuery());
+        self::assertSame($query, $page->getQuery());
     }
 }

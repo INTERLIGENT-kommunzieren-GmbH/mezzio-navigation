@@ -1,78 +1,100 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace MezzioTest\Navigation\Middleware;
 
+use Laminas\Navigation\Exception\InvalidArgumentException;
+use Laminas\Navigation\Navigation;
+use Mezzio\Navigation\Middleware\NavigationMiddleware;
+use Mezzio\Navigation\Page\MezzioPage;
+use Mezzio\Router\Route;
+use Mezzio\Router\RouteResult;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Mezzio\Router\RouteResult;
-use Mezzio\Navigation\Middleware\NavigationMiddleware;
-use Mezzio\Navigation\Page\MezzioPage;
-use Laminas\Navigation\Exception\InvalidArgumentException;
-use Laminas\Navigation\Navigation;
 
-class NavigationMiddlewareTest extends TestCase
+#[CoversClass(NavigationMiddleware::class)]
+final class NavigationMiddlewareTest extends TestCase
 {
-    /**
-     * @var NavigationMiddleware
-     */
-    private $middleware;
+    private NavigationMiddleware $middleware;
 
-    /**
-     * @var Navigation
-     */
-    private $navigation;
+    private Navigation $navigation;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        // Create navigation with one page
         $this->navigation = new Navigation([
             new MezzioPage(),
             new MezzioPage(),
             new MezzioPage(),
         ]);
 
-        // Create middleware
         $this->middleware = new NavigationMiddleware([$this->navigation]);
     }
 
-    public function testRouteResultShouldAddedToPages()
+    public function testRouteResultShouldAddedToPages(): void
     {
-        // Route result test double
-        $routeResult = $this->prophesize(RouteResult::class)->reveal();
+        $routeResult = RouteResult::fromRoute(new Route(
+            '/foo',
+            $this->createStub(MiddlewareInterface::class),
+            ['GET'],
+            'foo'
+        ));
 
-        // Request test double
-        /** @var ServerRequestInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ServerRequestInterface::class);
-        $prophecy->getAttribute(RouteResult::class, false)->willReturn(
-            $routeResult
-        );
-        /** @var ServerRequestInterface $request */
-        $request = $prophecy->reveal();
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())
+            ->method('getAttribute')
+            ->with(RouteResult::class, false)
+            ->willReturn($routeResult);
 
-        // Response test double
-        /** @var ResponseInterface $response */
-        $response = $this->prophesize(ResponseInterface::class)->reveal();
+        $response = $this->createStub(ResponseInterface::class);
 
-        // Handler test double
-        $handler = $this->prophesize(RequestHandlerInterface::class);
-        $handler->handle($request)->willReturn($response);
-        $this->middleware->process($request, $handler->reveal());
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::once())
+            ->method('handle')
+            ->with($request)
+            ->willReturn($response);
 
-        // Test pages
-        /** @var MezzioPage $page */
+        self::assertSame($response, $this->middleware->process($request, $handler));
+
         foreach ($this->navigation as $page) {
-            $this->assertEquals($routeResult, $page->getRouteResult());
+            self::assertInstanceOf(MezzioPage::class, $page);
+            self::assertSame($routeResult, $page->getRouteResult());
         }
     }
 
-    public function testInvalidContainerShouldThrowException()
+    public function testRequestWithoutRouteResultIsPassedThrough(): void
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())
+            ->method('getAttribute')
+            ->with(RouteResult::class, false)
+            ->willReturn(false);
+
+        $response = $this->createStub(ResponseInterface::class);
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::once())
+            ->method('handle')
+            ->with($request)
+            ->willReturn($response);
+
+        self::assertSame($response, $this->middleware->process($request, $handler));
+
+        foreach ($this->navigation as $page) {
+            self::assertInstanceOf(MezzioPage::class, $page);
+            self::assertNull($page->getRouteResult());
+        }
+    }
+
+    public function testInvalidContainerShouldThrowException(): void
     {
         $this->expectException(InvalidArgumentException::class);
 

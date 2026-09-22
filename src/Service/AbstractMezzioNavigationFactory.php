@@ -1,47 +1,50 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace Mezzio\Navigation\Service;
 
-use Psr\Container\ContainerInterface;
-use Traversable;
 use Laminas\Config;
-use Mezzio\Helper\UrlHelper;
-use Mezzio\Navigation\Page\MezzioPage;
 use Laminas\Navigation\Exception;
 use Laminas\Stdlib\ArrayUtils;
+use Mezzio\Helper\UrlHelper;
+use Mezzio\Navigation\Page\MezzioPage;
+use Psr\Container\ContainerInterface;
+use Traversable;
+
+use function file_exists;
+use function is_array;
+use function is_string;
+use function sprintf;
 
 abstract class AbstractMezzioNavigationFactory
 {
     /**
-     * @param ContainerInterface $container
-     * @param array              $pages
-     * @return array
+     * @param array<array-key, mixed> $pages
+     * @return array<array-key, mixed>
      */
     protected function preparePages(
         ContainerInterface $container,
         array $pages
-    ) : array {
+    ): array {
         // Get URL helper
-        /** @var UrlHelper $urlHelper */
         $urlHelper = $container->get(UrlHelper::class);
 
         return $this->injectComponents($pages, $urlHelper);
     }
 
     /**
-     * @param array          $pages
-     * @param UrlHelper|null $urlHelper
-     * @return array
+     * @param array<array-key, mixed> $pages
+     * @return array<array-key, mixed>
      */
     protected function injectComponents(
         array $pages,
-        UrlHelper $urlHelper = null
-    ) : array {
+        ?UrlHelper $urlHelper = null
+    ): array {
         foreach ($pages as &$page) {
             if (isset($page['route'])) {
                 // Set Mezzio page as page type
@@ -53,25 +56,27 @@ abstract class AbstractMezzioNavigationFactory
                 }
             }
 
-            if (isset($page['pages'])) {
-                $page['pages'] = $this->injectComponents(
-                    $page['pages'],
-                    $urlHelper
-                );
+            if (! isset($page['pages'])) {
+                continue;
             }
+
+            $page['pages'] = $this->injectComponents(
+                $page['pages'],
+                $urlHelper
+            );
         }
 
         return $pages;
     }
 
     /**
-     * @param string|Config\Config|array $config
-     * @return array|null|Config\Config
+     * @param mixed $config String filename, Traversable or array of pages
+     * @return array<array-key, mixed>
      * @throws Exception\InvalidArgumentException
      */
-    protected function getPagesFromConfig($config = null)
+    protected function getPagesFromConfig(mixed $config = null): array
     {
-        if (\is_string($config)) {
+        if (is_string($config)) {
             if (! file_exists($config)) {
                 throw new Exception\InvalidArgumentException(
                     sprintf(
@@ -80,10 +85,13 @@ abstract class AbstractMezzioNavigationFactory
                     )
                 );
             }
+
             $config = Config\Factory::fromFile($config);
         } elseif ($config instanceof Traversable) {
             $config = ArrayUtils::iteratorToArray($config);
-        } elseif (! \is_array($config)) {
+        }
+
+        if (! is_array($config)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid input, expected array, filename, or Traversable object'
             );

@@ -1,59 +1,45 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace Mezzio\Navigation\Page;
 
-use Mezzio\Helper\UrlHelper;
-use Mezzio\Router\RouteResult;
 use Laminas\Navigation\Exception;
 use Laminas\Navigation\Page\AbstractPage;
+use Mezzio\Helper\UrlHelper;
+use Mezzio\Router\RouteResult;
+
+use function array_intersect_assoc;
+use function count;
 
 class MezzioPage extends AbstractPage
 {
-    /**
-     * Route name
-     *
-     * @var string|null
-     */
-    private $routeName;
+    /** Route name */
+    private ?string $routeName = null;
 
-    /**
-     * Route parameters
-     *
-     * @var array
-     */
-    private $routeParams = [];
+    /** @var array<string, mixed> Route parameters */
+    private array $routeParams = [];
 
-    /**
-     * @var array
-     */
-    private $queryParams = [];
+    /** @var array<string, mixed> Query parameters */
+    private array $queryParams = [];
 
-    /**
-     * @var RouteResult
-     */
-    private $routeResult;
+    private ?RouteResult $routeResult = null;
 
-    /**
-     * @var UrlHelper
-     */
-    private $urlHelper;
+    private ?UrlHelper $urlHelper = null;
 
-    /**
-     * @var string|null
-     */
-    private $hrefCache;
+    private ?string $hrefCache = null;
 
     /**
      * @inheritDoc
      */
-    public function isActive($recursive = false) : bool
+    public function isActive($recursive = false): bool
     {
-        if ($this->active
+        if (
+            $this->active
             || $this->routeName === null
             || ! $this->routeResult instanceof RouteResult
         ) {
@@ -67,8 +53,9 @@ class MezzioPage extends AbstractPage
 
         $matchedRouteName = $this->routeResult->getMatchedRouteName();
 
-        if ($matchedRouteName === $this->routeName
-            && \count($intersectionOfParams) === \count($this->routeParams)
+        if (
+            $matchedRouteName === $this->routeName
+            && count($intersectionOfParams) === count($this->routeParams)
         ) {
             $this->active = true;
 
@@ -81,14 +68,21 @@ class MezzioPage extends AbstractPage
     /**
      * @inheritDoc
      */
-    public function getHref() : string
+    public function getHref(): string
     {
-        // User cache?
-        if ($this->hrefCache) {
+        // Use cache?
+        if ($this->hrefCache !== null) {
             return $this->hrefCache;
         }
 
-        if ($this->routeResult) {
+        if ($this->urlHelper === null) {
+            throw new Exception\DomainException(
+                'Mezzio\Navigation\Page\MezzioPage::getHref cannot execute'
+                . ' without a Mezzio\Helper\UrlHelper being set'
+            );
+        }
+
+        if ($this->routeResult instanceof RouteResult) {
             // Set route result
             $this->urlHelper->setRouteResult($this->routeResult);
         }
@@ -103,9 +97,9 @@ class MezzioPage extends AbstractPage
     }
 
     /**
-     * @param string|null $route
+     * @throws Exception\InvalidArgumentException
      */
-    public function setRoute(?string $route) : void
+    public function setRoute(?string $route): void
     {
         if ($route === '') {
             throw new Exception\InvalidArgumentException(
@@ -117,76 +111,61 @@ class MezzioPage extends AbstractPage
         $this->hrefCache = null;
     }
 
-    /**
-     * @return string
-     */
-    public function getRoute() : ?string
+    public function getRoute(): ?string
     {
         return $this->routeName;
     }
 
     /**
-     * @param array|null $params
+     * @param array<string, mixed>|null $params
      */
-    public function setParams(array $params = null) : void
+    public function setParams(?array $params = null): void
     {
-        $this->routeParams = $params ? : [];
+        $this->routeParams = $params ?: [];
         $this->hrefCache   = null;
     }
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
-    public function getParams() : array
+    public function getParams(): array
     {
         return $this->routeParams;
     }
 
     /**
-     * @param array|null $query
+     * @param array<string, mixed>|null $query
      */
-    public function setQuery(array $query = null) : void
+    public function setQuery(?array $query = null): void
     {
-        $this->queryParams = $query ? : [];
+        $this->queryParams = $query ?: [];
         $this->hrefCache   = null;
     }
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
-    public function getQuery() : array
+    public function getQuery(): array
     {
         return $this->queryParams;
     }
 
-    /**
-     * @param RouteResult $routeResult
-     */
-    public function setRouteResult(RouteResult $routeResult) : void
+    public function setRouteResult(RouteResult $routeResult): void
     {
         $this->routeResult = $routeResult;
     }
 
-    /**
-     * @return RouteResult|null
-     */
-    public function getRouteResult() : ?RouteResult
+    public function getRouteResult(): ?RouteResult
     {
         return $this->routeResult;
     }
 
-    /**
-     * @return UrlHelper
-     */
-    public function getUrlHelper() : ?UrlHelper
+    public function getUrlHelper(): ?UrlHelper
     {
         return $this->urlHelper;
     }
 
-    /**
-     * @param UrlHelper $urlHelper
-     */
-    public function setUrlHelper(UrlHelper $urlHelper) : void
+    public function setUrlHelper(UrlHelper $urlHelper): void
     {
         $this->urlHelper = $urlHelper;
     }

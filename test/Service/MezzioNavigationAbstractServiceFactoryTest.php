@@ -1,95 +1,92 @@
 <?php
+
 /**
- * @see       https://github.com/mezzio/mezzio-navigation for the canonical source repository
- * @copyright https://github.com/mezzio/mezzio-navigation/blob/master/COPYRIGHT.md
- * @license   https://github.com/mezzio/mezzio-navigation/blob/master/LICENSE.md New BSD License
+ * @see       https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation for the canonical source repository
  */
+
+declare(strict_types=1);
 
 namespace MezzioTest\Navigation\Service;
 
-use Interop\Container\ContainerInterface;
-use PHPUnit\Framework\TestCase;
+use Laminas\Navigation\Navigation;
 use Mezzio\Helper\UrlHelper;
 use Mezzio\Navigation\Service\MezzioNavigationAbstractServiceFactory;
 use Mezzio\Router\LaminasRouter;
-use Laminas\Navigation\Navigation;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
-class MezzioNavigationAbstractServiceFactoryTest extends TestCase
+#[CoversClass(MezzioNavigationAbstractServiceFactory::class)]
+final class MezzioNavigationAbstractServiceFactoryTest extends TestCase
 {
-    /**
-     * @var MezzioNavigationAbstractServiceFactory
-     */
-    private $factory;
+    private MezzioNavigationAbstractServiceFactory $factory;
 
-    /**
-     * @var ContainerInterface
-     */
-    private $container;
+    private ContainerInterface $container;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        // Create factory
-        $this->factory = new MezzioNavigationAbstractServiceFactory();
-
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(true);
-        $prophecy->get('config')->willReturn(
-            [
-                'navigation' => [
-                    'default' => [
-                        [
-                            'route' => 'home',
-                        ],
-                    ],
+        $this->factory   = new MezzioNavigationAbstractServiceFactory();
+        $this->container = $this->createContainer([
+            'navigation' => [
+                'default' => [
+                    ['route' => 'home'],
                 ],
-            ]
-        );
-        $prophecy->get(UrlHelper::class)->willReturn(
-            new UrlHelper(new LaminasRouter())
-        );
-        $this->container = $prophecy->reveal();
+            ],
+        ]);
     }
 
-    public function testInvokeMethodShouldReturnNavigationInstance()
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function createContainer(array $config): ContainerInterface
     {
-        $factory = $this->factory;
-        $this->assertInstanceOf(
+        $container = $this->createStub(ContainerInterface::class);
+        $container->method('has')
+            ->willReturnCallback(static fn (string $id): bool => $id === 'config');
+        $container->method('get')
+            ->willReturnCallback(static fn (string $id): mixed => match ($id) {
+                'config'          => $config,
+                UrlHelper::class  => new UrlHelper(new LaminasRouter()),
+                default           => null,
+            });
+
+        return $container;
+    }
+
+    public function testInvokeMethodShouldReturnNavigationInstance(): void
+    {
+        self::assertInstanceOf(
             Navigation::class,
-            $factory($this->container, Navigation::class)
+            ($this->factory)($this->container, Navigation::class)
         );
     }
 
-    public function testCanCreateMethodWithValidName()
+    public function testInvokeMethodShouldReturnTheSameInstanceOnSecondCall(): void
     {
-        $this->assertTrue(
+        $first  = ($this->factory)($this->container, Navigation::class);
+        $second = ($this->factory)($this->container, Navigation::class);
+
+        self::assertSame($first, $second);
+    }
+
+    public function testCanCreateMethodWithValidName(): void
+    {
+        self::assertTrue(
             $this->factory->canCreate($this->container, Navigation::class)
         );
     }
 
-    public function testCanCreateMethodWithInvalidName()
+    public function testCanCreateMethodWithInvalidName(): void
     {
-        $this->assertFalse(
+        self::assertFalse(
             $this->factory->canCreate($this->container, 'Foobar')
         );
     }
 
-    public function testCreationWithEmptyConfigShouldReturnEmptyNavigation()
+    public function testCreationWithEmptyConfigShouldReturnEmptyNavigation(): void
     {
-        // Create test double for container
-        /** @var ContainerInterface|\Prophecy\Prophecy\ObjectProphecy $prophecy */
-        $prophecy = $this->prophesize(ContainerInterface::class);
-        $prophecy->has('config')->willReturn(true);
-        $prophecy->get('config')->willReturn([]);
-        $prophecy->get(UrlHelper::class)->willReturn(
-            new UrlHelper(new LaminasRouter())
-        );
-        /** @var ContainerInterface $container */
-        $container = $prophecy->reveal();
+        $result = ($this->factory)($this->createContainer([]), Navigation::class);
 
-        $factory = $this->factory;
-        $result = $factory($container, Navigation::class);
-        $this->assertCount(0, $result);
+        self::assertCount(0, $result);
     }
 }
