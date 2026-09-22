@@ -53,6 +53,15 @@ jobs:
         if: matrix.deps == 'locked'
         run: composer install --no-interaction --no-progress
 
+      # The dev toolchain pinned by composer.json (phpunit 7.x, php_codesniffer
+      # 2.x) is old enough that every usable version carries a Packagist
+      # security advisory, which Composer >= 2.9 refuses to resolve by default.
+      # These are dev-only, CI-only tools, so the block is lifted for the jobs
+      # that re-resolve dependencies. Drop this once the toolchain is modernised.
+      - name: Allow advisory-flagged dev dependencies
+        if: matrix.deps != 'locked'
+        run: composer config --no-plugins policy.advisories.block false
+
       - name: Install dependencies (latest)
         if: matrix.deps == 'latest'
         run: composer update --no-interaction --no-progress
