@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation/badge.svg?branch=master)](https://coveralls.io/github/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation?branch=master)
+[![Latest Stable Version](https://poser.pugx.org/ik-oss/mezzio-navigation/v)](https://packagist.org/packages/ik-oss/mezzio-navigation)
+[![License](https://poser.pugx.org/ik-oss/mezzio-navigation/license)](https://packagist.org/packages/ik-oss/mezzio-navigation)
 
 `mezzio-navigation` provides page, middleware and factories for
 navigations in a mezzio application.
@@ -17,19 +19,8 @@ maintained fork of the unmaintained upstream project.
 
 ## Installation
 
-The package is not published on Packagist. Add the repository to your
-`composer.json` and require it:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/INTERLIGENT-kommunzieren-GmbH/mezzio-navigation.git"
-        }
-    ]
-}
-```
+The package is available on
+[Packagist](https://packagist.org/packages/ik-oss/mezzio-navigation):
 
 ```bash
 composer require ik-oss/mezzio-navigation
